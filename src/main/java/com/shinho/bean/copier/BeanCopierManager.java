@@ -63,7 +63,7 @@ public class BeanCopierManager {
     }
 
     public BeanCopier getBeanCopier(Class<?> sourceClass, Class<?> targetClass, boolean useConverter) {
-        Object key = KEY_FACTORY.newInstance(sourceClass.getName(), targetClass.getName(), true);
+        Object key = KEY_FACTORY.newInstance(sourceClass.getName(), targetClass.getName(), useConverter);
         BeanCopier beanCopier = COPY_CACHE.get(key);
         if (beanCopier == null) {
             COPY_CACHE.putIfAbsent(key, BeanCopier.create(sourceClass, targetClass, useConverter));
