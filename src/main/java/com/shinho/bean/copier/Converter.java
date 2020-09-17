@@ -10,5 +10,5 @@ package com.shinho.bean.copier;
 @FunctionalInterface
 public interface Converter {
 
-    Object convert(Object sourceValue, Object targetValue, Class target, Object context);
+    Object convert(Object sourceValue, Object targetValue, Class<?> targetValueClass, Object context);
 }

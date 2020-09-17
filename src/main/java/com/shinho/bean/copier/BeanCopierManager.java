@@ -31,8 +31,11 @@ public class BeanCopierManager {
         Objects.requireNonNull(target, "Target must not be null");
         Class<?> sourceClass = source.getClass();
         Class<?> targetClass = target.getClass();
-        getBeanCopier(sourceClass, targetClass, true).copy(source, target, (sourceValue, targetValue, target1, context) -> {
+        getBeanCopier(sourceClass, targetClass, true).copy(source, target, (sourceValue, targetValue, targetValueClass, context) -> {
             if (sourceValue == null) {
+                return targetValue;
+            }
+            if (!targetValueClass.isAssignableFrom(sourceValue.getClass())) {//类型不一致忽略
                 return targetValue;
             }
             return sourceValue;

@@ -3,6 +3,7 @@ package com.shinho.bean.copier;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
+import org.springframework.beans.BeanUtils;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Modifier;
@@ -50,14 +51,14 @@ public abstract class BeanCopier {
         }
 
         public void setSource(Class source) {
-            if(!Modifier.isPublic(source.getModifiers())){
+            if (!Modifier.isPublic(source.getModifiers())) {
                 setNamePrefix(source.getName());
             }
             this.source = source;
         }
 
         public void setTarget(Class target) {
-            if(!Modifier.isPublic(target.getModifiers())){
+            if (!Modifier.isPublic(target.getModifiers())) {
                 setNamePrefix(target.getName());
             }
 
@@ -78,7 +79,7 @@ public abstract class BeanCopier {
 
         public BeanCopier create() {
             Object key = KEY_FACTORY.newInstance(source.getName(), target.getName(), useConverter);
-            return (BeanCopier)super.create(key);
+            return (BeanCopier) super.create(key);
         }
 
         public void generateClass(ClassVisitor v) {
@@ -95,7 +96,7 @@ public abstract class BeanCopier {
             EmitUtils.null_constructor(ce);
             CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, COPY, null);
             PropertyDescriptor[] getters = ReflectUtils.getBeanGetters(source);
-            PropertyDescriptor[] propertyDescriptors = ReflectUtils.getBeanProperties(target);
+            PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(target);
 
             Map names = new HashMap();
             for (int i = 0; i < getters.length; i++) {
@@ -118,11 +119,12 @@ public abstract class BeanCopier {
             }
             for (int i = 0; i < propertyDescriptors.length; i++) {
                 PropertyDescriptor setter = propertyDescriptors[i];
-                PropertyDescriptor getter = (PropertyDescriptor)names.get(setter.getName());
-                if (getter != null) {
+                PropertyDescriptor getter = (PropertyDescriptor) names.get(setter.getName());
+                if (getter != null && setter.getReadMethod() != null && setter.getWriteMethod() != null) {
                     MethodInfo read = ReflectUtils.getMethodInfo(getter.getReadMethod());
                     MethodInfo write = ReflectUtils.getMethodInfo(setter.getWriteMethod());
                     MethodInfo read0 = ReflectUtils.getMethodInfo(setter.getReadMethod());
+                    Type setterReturnType = write.getSignature().getReturnType();
                     if (useConverter) {
                         Type setterType = write.getSignature().getArgumentTypes()[0];
                         e.load_local(targetLocal);
@@ -142,6 +144,9 @@ public abstract class BeanCopier {
                         e.dup2();
                         e.invoke(read);
                         e.invoke(write);
+                    }
+                    if (!Type.VOID_TYPE.equals(setterReturnType)) {
+                        e.pop();
                     }
                 }
             }
